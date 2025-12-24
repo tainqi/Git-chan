@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Git-Chan - 你的Git电子宠物</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/petite-vue@0.4.1/dist/petite-vue.iife.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial Rounded MT Bold', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            backdrop-filter: blur(10px);
+        }
+        
+        .title {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .pet-container {
+            height: 400px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(45deg, #f5f7fa, #c3cfe2);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .pet-model {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .status-panel h2, .actions-panel h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .status-bar {
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+        
+        .status-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+        }
+        
+        .hunger { background: linear-gradient(90deg, #ff6b6b, #ff8e8e); }
+        .happiness { background: linear-gradient(90deg, #4ecdc4, #44a08d); }
+        .energy { background: linear-gradient(90deg, #ffd166, #ffb347); }
+        
+        .actions {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .btn {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .feed-btn { 
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            grid-column: span 2;
+        }
+        
+        .play-btn { 
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
+            color: white;
+        }
+        
+        .sleep-btn { 
+            background: linear-gradient(45deg, #2196F3, #03A9F4);
+            color: white;
+        }
+        
+        .feed-form {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .feed-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        
+        .feed-input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .messages {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            overflow-y: auto;
+        }
+        
+        .message {
+            padding: 10px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .level-badge {
+            display: inline-block;
+            background: linear-gradient(45deg, #FFD700, #FFA500);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            margin-left: 10px;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+        }
+        
+        .success { background: linear-gradient(45deg, #4CAF50, #8BC34A); }
+        .error { background: linear-gradient(45deg, #FF5252, #FF8A80); }
+        
+        @keyframes slideIn {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        
+        .model-placeholder {
+            font-size: 100px;
+            color: #667eea;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+    </style>
+</head>
+<body>
+    <div v-scope="App" v-cloak>
+        <div class="container">
+            <!-- 左侧：宠物显示 -->
+            <div class="panel">
+                <h1 class="title">Git-Chan 🐱</h1>
+                <div class="pet-container">
+                    <div class="pet-model" id="live2d-container">
+                        <!-- Live2D模型将在这里显示 -->
+                        <div class="model-placeholder">
+                            <i class="fas fa-cat"></i>
+                        </div>
+                        <div v-if="pet.status === 'hungry'" style="position: absolute; top: 10px; color: #ff6b6b;">
+                            <i class="fas fa-utensils"></i> 好饿...
+                        </div>
+                        <div v-if="pet.status === 'tired'" style="position: absolute; top: 10px; color: #2196F3;">
+                            <i class="fas fa-bed"></i> 想睡觉...
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="feed-form">
+                    <input 
+                        type="text" 
+                        v-model="gitUrl" 
+                        placeholder="输入Git链接喂养 (如: https://github.com/username/repo)" 
+                        class="feed-input"
+                        @keyup.enter="feedPet"
+                    >
+                    <button @click="feedPet" class="btn feed-btn">
+                        <i class="fas fa-utensils"></i> 喂食
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 右侧：状态和交互 -->
+            <div class="panel status-panel">
+                <h2><i class="fas fa-chart-bar"></i> 状态面板</h2>
+                
+                <div class="status-item">
+                    <div>
+                        <strong><i class="fas fa-hamburger"></i> 饥饿度</strong>
+                        <div class="status-bar">
+                            <div class="status-fill hunger" :style="{width: (100 - pet.hunger) + '%'}"></div>
+                        </div>
+                    </div>
+                    <span>{{ 100 - pet.hunger }}%</span>
+                </div>
+                
+                <div class="status-item">
+                    <div>
+                        <strong><i class="fas fa-smile"></i> 快乐度</strong>
+                        <div class="status-bar">
+                            <div class="status-fill happiness" :style="{width: pet.happiness + '%'}"></div>
+                        </div>
+                    </div>
+                    <span>{{ pet.happiness }}%</span>
+                </div>
+                
+                <div class="status-item">
+                    <div>
+                        <strong><i class="fas fa-bolt"></i> 能量</strong>
+                        <div class="status-bar">
+                            <div class="status-fill energy" :style="{width: pet.energy + '%'}"></div>
+                        </div>
+                    </div>
+                    <span>{{ pet.energy }}%</span>
+                </div>
+                
+                <div class="status-item">
+                    <div>
+                        <strong><i class="fas fa-chart-line"></i> 等级</strong>
+                    </div>
+                    <span class="level-badge">Lv.{{ pet.level }}</span>
+                </div>
+                
+                <div class="status-item">
+                    <div>
+                        <strong><i class="fas fa-star"></i> 经验</strong>
+                        <div class="status-bar">
+                            <div class="status-fill" style="background: linear-gradient(90deg, #9c27b0, #e91e63); width: (pet.exp / (pet.level * 100) * 100) + '%'"></div>
+                        </div>
+                    </div>
+                    <span>{{ pet.exp }}/{{ pet.level * 100 }}</span>
+                </div>
+                
+                <div class="status-item">
+                    <div>
+                        <strong><i class="fas fa-history"></i> 喂养次数</strong>
+                    </div>
+                    <span>{{ pet.total_fed }}</span>
+                </div>
+                
+                <h2 style="margin-top: 30px;"><i class="fas fa-gamepad"></i> 互动</h2>
+                <div class="actions">
+                    <button @click="playWithPet" class="btn play-btn">
+                        <i class="fas fa-gamepad"></i> 玩耍
+                    </button>
+                    <button @click="putToSleep" class="btn sleep-btn">
+                        <i class="fas fa-bed"></i> 睡觉
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 消息面板 -->
+            <div class="panel" style="grid-column: span 2;">
+                <h2><i class="fas fa-comment-alt"></i> 消息日志</h2>
+                <div class="messages">
+                    <div v-for="msg in pet.messages.slice().reverse()" class="message">
+                        <i class="fas fa-comment-dots"></i> {{ msg }}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const App = {
+            $template: {},
+            gitUrl: '',
+            pet: {
+                name: 'Git-Chan',
+                hunger: 50,
+                happiness: 80,
+                energy: 70,
+                level: 1,
+                exp: 0,
+                total_fed: 0,
+                status: 'happy',
+                messages: []
+            },
+            
+            async mounted() {
+                await this.loadPetStatus();
+                // 每30秒自动更新状态
+                setInterval(() => this.loadPetStatus(), 30000);
+            },
+            
+            async loadPetStatus() {
+                try {
+                    const response = await fetch('/api/status');
+                    this.pet = await response.json();
+                } catch (error) {
+                    console.error('加载状态失败:', error);
+                }
+            },
+            
+            async feedPet() {
+                if (!this.gitUrl.trim()) {
+                    this.showNotification('请输入Git链接', 'error');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch('/api/feed', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({url: this.gitUrl})
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        this.pet = data.data;
+                        this.showNotification(data.message, 'success');
+                        this.gitUrl = '';
+                    } else {
+                        this.showNotification(data.message, 'error');
+                    }
+                } catch (error) {
+                    this.showNotification('喂养失败，请重试', 'error');
+                }
+            },
+            
+            async playWithPet() {
+                try {
+                    const response = await fetch('/api/play', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        this.pet = data.data;
+                        this.showNotification('玩耍成功！', 'success');
+                    }
+                } catch (error) {
+                    this.showNotification('玩耍失败', 'error');
+                }
+            },
+            
+            async putToSleep() {
+                try {
+                    const response = await fetch('/api/sleep', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'}
+                    });
+                    
+                    const data = await response.json();
+                    if (data.success) {
+                        this.pet = data.data;
+                        this.showNotification('Git-Chan睡着了', 'success');
+                    }
+                } catch (error) {
+                    this.showNotification('操作失败', 'error');
+                }
+            },
+            
+            showNotification(message, type) {
+                const notification = document.createElement('div');
+                notification.className = `notification ${type}`;
+                notification.textContent = message;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.animation = 'slideIn 0.3s ease reverse';
+                    setTimeout(() => notification.remove(), 300);
+                }, 3000);
+            }
+        };
+        
+        PetiteVue.createApp(App).mount();
+    </script>
+</body>
+      </html>
